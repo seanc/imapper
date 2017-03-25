@@ -1,0 +1,32 @@
+{
+  "name": "imapper",
+  "description": "Search and save emails in inboxes through imap",
+  "version": "0.1.0",
+  "homepage": "https://github.com/seanc/imapper",
+  "author": "Sean Wilson (https://imsean.me)",
+  "repository": "seanc/imapper",
+  "bugs": {
+    "url": "https://github.com/seanc/imapper/issues"
+  },
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "LICENSE"
+  ],
+  "main": "index.js",
+  "bin": {
+    "imapper": "bin/imapper.js"
+  },
+  "engines": {
+    "node": ">=6"
+  },
+  "dependencies": {
+    "async-each-series": "^1.1.0",
+    "bluebird": "^3.5.0",
+    "commander": "^2.9.0",
+    "imap": "^0.8.19",
+    "line-by-line": "^0.1.5",
+    "ora": "^1.2.0",
+    "yn": "^1.2.0"
+  }
+}
