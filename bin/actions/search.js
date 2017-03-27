@@ -22,17 +22,17 @@ function search(query, opts) {
     })
     lr.on('line', line => {
       lr.pause()
+
       const [ user, password, imapHost ] = line.split(':')
       if (!user || !password) {
         lr.resume()
-        spinner.text = `${matchingCount} matching, ${++unmatchingCount + matchingCount} checked, ${emailCount} total`
+        unmatchingCount++
+        spinner.text = `${matchingCount} matching, ${unmatchingCount + matchingCount} checked, ${emailCount} total`
         return
       }
 
-      // if (user === 'fox.matt@mail.com') console.log('oh shet its him', user, password)
       let host = user.split('@')[1]
       if (imapHost) host = imapHost
-
 
       if (serverList.hasOwnProperty(host)) {
         const imapServer = serverList[host]
@@ -46,11 +46,16 @@ function search(query, opts) {
         })
 
         client.once('ready', () => {
-          lr.resume()
           client.getBoxes((err, boxes) => {
             if (err) return console.log(err)
 
             boxes = Object.keys(boxes).filter(box => !box.includes('[Gmail]'))
+            if (!boxes.length) {
+              unmatchingCount++
+              spinner.text = `${matchingCount} matching, ${unmatchingCount + matchingCount} checked, ${emailCount} total`
+              return
+            }
+
             const results = []
 
             eachSeries(boxes, (box, next) => {
@@ -60,48 +65,42 @@ function search(query, opts) {
                 next()
               }).catch(console.log)
             }, () => {
-              const matching = results.some(result => result)
-              if (matching) {
-                fs.appendFileSync(output, line + '\n')
-                matchingCount++
+              if (results.some(result => result)) {
+                fs.appendFile(output, line + '\n', () => {
+                  matchingCount++
+                })
+              } else {
+                unmatchingCount++
               }
-
-              unmatchingCount++
 
               spinner.text = `${matchingCount} matching, ${unmatchingCount + matchingCount} checked, ${emailCount} total`
-
-              let total = matchingCount + unmatchingCount
-              if (total === emailCount) {
-                spinner.succeed(`Finished Checking, ${matchingCount} found matching query ${query} in ${header}`)
-                process.exit()
-              }
+              lr.resume()
             })
           })
         })
 
-        client.once('error', err => {
+        client.on('error', () => {
           client.destroy()
-          lr.resume()
-
-          const errors = [
-            'timeout-auth',
-            'authentication',
-            'timeout',
-            'read ECONNRESET'
-          ]
-          if (errors.includes(err.textCode) || errors.includes(err.source) || errors.includes(err.message)) {
-            spinner.text = `${matchingCount} matching, ${++unmatchingCount + matchingCount} checked, ${emailCount} total`
-          } else {
-            console.log(err, line)
-          }
-
         })
-        client.once('end', () => lr.resume())
-        client.once('close', () => lr.resume())
+
+        client.on('close', () => {
+          unmatchingCount++
+          spinner.text = `${matchingCount} matching, ${unmatchingCount + matchingCount} checked, ${emailCount} total`
+          lr.resume()
+        })
+
         client.connect()
+
       } else {
         lr.resume()
+        spinner.text = `${matchingCount} matching, ${++unmatchingCount + matchingCount} checked, ${emailCount} total`
       }
+    })
+
+    lr.on('end', () => {
+      spinner.succeed(`Finished Checking, ${matchingCount} found matching query ${query} in ${header}`)
+      console.log('debug', unmatchingCount + matchingCount)
+      process.exit()
     })
   })
 }
