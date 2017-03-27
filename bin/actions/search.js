@@ -85,7 +85,8 @@ function search(query, opts) {
 
           const errors = [
             'timeout-auth',
-            'authentication'
+            'authentication',
+            'timeout'
           ]
           if (errors.includes(err.textCode) || errors.includes(err.source)) {
             spinner.text = `${matchingCount} matching, ${++unmatchingCount + matchingCount} checked, ${emailCount} total`
