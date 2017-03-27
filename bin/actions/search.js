@@ -86,9 +86,10 @@ function search(query, opts) {
           const errors = [
             'timeout-auth',
             'authentication',
-            'timeout'
+            'timeout',
+            'read ECONNRESET'
           ]
-          if (errors.includes(err.textCode) || errors.includes(err.source)) {
+          if (errors.includes(err.textCode) || errors.includes(err.source) || errors.includes(err.message)) {
             spinner.text = `${matchingCount} matching, ${++unmatchingCount + matchingCount} checked, ${emailCount} total`
           } else {
             console.log(err, line)
